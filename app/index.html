@@ -1,20 +1,83 @@
 <!doctype html>
-<html lang="en" ng-app="phonecat">
+<html lang="en" ng-app="MyApp">
 <head>
   <meta charset="utf-8">
-  <title>Google Phone Gallery</title>
+  <title>My HTML File</title>
   <link rel="stylesheet" href="css/app.css">
-  <link rel="stylesheet" href="css/bootstrap.css">
-  <script src="lib/angular/angular.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/controllers.js"></script>
-  <script src="js/filters.js"></script>
-  <script src="js/services.js"></script>
-  <script src="lib/angular/angular-resource.js"></script>
-</head>
-<body>
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+  <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"> </script>
+  <link rel="stylesheet" type="text/css" href="/bower_components/codemirror/lib/codemirror.css">
+  <script type="text/javascript" src="/bower_components/codemirror/lib/codemirror.js"></script>
+  <script type="text/javascript" src="/bower_components/angular/angular.js"></script>
+  <script type="text/javascript" src="/bower_components/angular-ui-codemirror/ui-codemirror.js"></script>
+<script src="https://cdn.firebase.com/v0/firebase.js"></script>
+<script src="https://cdn.firebase.com/libs/angularfire/0.3.0/angularfire.min.js"></script>
+  <script>
 
-  <div ng-view></div>
+    angular.module('MyApp', ['ui.codemirror', 'firebase']);
+    function MainController ($scope) {
+      $scope.name = "jeremy";
+      $scope.html = '{{messages}}'
+      $scope.fn = function() {console.log('fn called');};
+    }
+
+    angular.module('MyApp')
+      .directive('compile', ['$compile', 'angularFire',function ($compile, angularFire) {
+      return function(scope, element, attrs) {
+          scope.$watch(
+            function(scope) {
+              // watch the 'compile' expression for changes
+              return scope.$eval(attrs.compile);
+            },
+            function(value) {
+              // when the 'compile' expression changes
+              // assign it into the current DOM
+              element.html(value);
+
+              // compile the new DOM and link it to the current
+              // scope.
+              // NOTE: we only compile .childNodes so that
+              // we don't get into infinite loop compiling ourselves
+              newScope = scope.$new(true)
+              newScope.alert = function(x) {alert(x)};
+              newScope.prompt = function(x) {
+                return prompt(x)
+              };
+              newScope.db = new Firebase('https://angularfire.firebaseio.com/');
+              newScope.db.sync = function(scopeProperty, firebaseLocation) {
+                var ref;
+                if (firebaseLocation) {
+                   ref = newScope.db.child(firebaseLocation);
+                } else {
+                  ref = newScope.db.child(scopeProperty);
+                }
+                angularFire(ref.limit(15), newScope, scopeProperty);
+                setTimeout(300, function(){newScope[scopeProperty]});
+              }
+              newScope.addMessage = function() {
+                newScope.messages.push({
+                  name: "enjoy your day",
+                  content: 'test'
+                });
+              };
+              newScope.messages = [];
+              newScope.db.sync('messages', 'chat');
+              window.$$scope = newScope;
+              newScope.addOne = function() {newScope.x = newScope.x + 1};
+              $compile(element.contents())(newScope);
+            }
+        );
+    };
+    }]);
+  </script>
+</head>
+<body ng-controller="MainController">
+  <div class='ide'>
+
+  <textarea ui-codemirror="{lineWrapping:true, lineNumbers: true, mode: 'xml'}" ng-model="html"></textarea>
+  <div id='user-html' compile="html"> </div>
+  <a class='btn btn-primary' ng-click="html =''">Reset</a>
 
 </body>
 </html>

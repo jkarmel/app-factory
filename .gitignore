@@ -1,2 +1,3 @@
 logs/*
 !.gitkeep
+/bower_components
